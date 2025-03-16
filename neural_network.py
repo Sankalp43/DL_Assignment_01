@@ -287,3 +287,75 @@ class NeuralNetwork:
                 self.weights[i] -= lr * self.weight_decay * self.weights[i]
 
 
+
+    def calculate_accuracy(self, y_pred: np.ndarray, y_true: np.ndarray) -> float:
+        """
+        Calculate accuracy given predictions and true labels.
+        """
+        pred_labels = np.argmax(y_pred, axis=1)
+        true_labels = np.argmax(y_true, axis=1)
+        accuracy = np.mean(pred_labels == true_labels) * 100
+        return accuracy
+
+
+        
+    # Training method with early stopping placeholder (for future implementation)
+    def train(
+            self,
+            x_train: np.ndarray,
+            y_train: np.ndarray,
+            epochs: int,
+            batch_size: int=None,
+            x_val: np.ndarray = None,
+            y_val: np.ndarray = None,
+            wandb=None):
+        
+        n_samples = x_train.shape[0]
+        
+        if batch_size is None:
+            batch_size = n_samples
+        
+        for epoch in range(epochs):
+            indices = np.random.permutation(n_samples)
+            
+            for start_idx in range(0, n_samples, batch_size):
+                end_idx = start_idx + batch_size
+                
+                batch_indices = indices[start_idx:end_idx]
+                x_batch, y_batch = x_train[batch_indices], y_train[batch_indices]
+
+                activations = self.forward_propagation(x_batch)
+                grads_w, grads_b = self.back_propagation(activations, y_batch)
+                self.update_parameters(grads_w, grads_b)
+            
+            preds_epoch_end = self.forward_propagation(x_train)[-1]
+            self.lit = preds_epoch_end
+            loss_func_method : Callable[[np.ndarray,np.ndarray],float]= getattr(self,f"{self.loss_function_name}_loss")
+            
+            # epoch_loss=loss_func_method(preds_epoch_end,y_train)
+            epoch_loss = loss_func_method(preds_epoch_end, y_train)
+
+            # Calculate accuracy
+            accuracy = self.calculate_accuracy(preds_epoch_end, y_train)
+            
+            # Print both loss and accuracy
+            print(f"Epoch {epoch+1}/{epochs}, Loss: {epoch_loss:.4f}, Accuracy: {accuracy:.2f}%")
+
+            if x_val is not None and y_val is not None:
+                val_preds = self.forward_propagation(x_val)[-1]
+                val_loss_func = getattr(self, f"{self.loss_function_name}_loss")
+                val_loss = val_loss_func(val_preds, y_val)
+                val_acc = self.calculate_accuracy(val_preds, y_val)
+
+                print(f"Validation Loss: {val_loss:.4f}, Validation Accuracy: {val_acc:.2f}%")
+                wandb.log({"Train_Loss": epoch_loss, "Train_Accuracy": accuracy, "Val Loss": val_loss, "Val Accuracy": val_acc})
+
+            # print(f"Epoch {epoch+1}/{epochs}, Loss:{epoch_loss:.4f}")
+
+    # Prediction method
+    def predict(self,x_test:np.ndarray)->np.ndarray:
+        
+         preds=self.forward_propagation(x_test)[-1]
+         return preds.argmax(axis=1)
+
+
