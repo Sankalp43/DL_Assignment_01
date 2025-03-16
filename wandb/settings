@@ -1,0 +1,5 @@
+[default]
+entity = da24s021-indian-institute-of-technology-madras
+project = DA6401_assignment1
+base_url = https://api.wandb.ai
+
