@@ -56,3 +56,28 @@ class NeuralNetwork:
         # Initialize weights and biases
         layer_sizes = [input_size] + hidden_layers + [output_size]
         self.weights, self.biases = self.initialize_weights(layer_sizes=layer_sizes, method='xavier')
+
+
+
+
+    def initialize_weights(self, layer_sizes: List[int], method: str='random'):
+        weights, biases = [], []
+        
+        for i in range(len(layer_sizes) - 1):
+            n_in, n_out = layer_sizes[i], layer_sizes[i+1]
+
+            if method == 'random':
+                w = np.random.randn(n_in, n_out) * 0.01
+                weights.append(w)
+
+            elif method == 'xavier':
+                limit = np.sqrt(6 / (layer_sizes[i] + layer_sizes[i+1]))
+                w_shape=(layer_sizes[i],layer_sizes[i+1])
+                weights.append(np.random.uniform(-limit, limit, size=w_shape))
+
+            else:
+                raise ValueError("Unsupported initialization method. Choose from ['random', 'xavier'].")
+
+            biases.append(np.zeros((1, layer_sizes[i+1])))
+
+        return weights, biases
