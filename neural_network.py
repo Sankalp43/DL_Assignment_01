@@ -175,4 +175,102 @@ class NeuralNetwork:
             grad_biases[i] = delta.sum(axis=0, keepdims=True)
 
         return grad_weights, grad_biases
+    
+
+
+
+    # Parameter update using SGD optimizer
+    def update_parameters(self,grad_weights,grad_biases):
+      lr=self.learning_rate
+      
+      if self.optimizer=='sgd':
+          for i in range(len(self.weights)):
+            #   self.weights[i]-=lr*grad_weights[i]
+            #   self.biases[i]-=lr*grad_biases[i]
+
+
+              self.weights[i] -= lr * (grad_weights[i] + self.weight_decay * self.weights[i])
+              self.biases[i] -= lr * grad_biases[i]
+
+      elif self.optimizer=='momentum':
+
+
+          for i in range(len(self.weights)):
+              self.velocities_w[i]=self.momentum_gamma*self.velocities_w[i]+lr*grad_weights[i]
+              self.velocities_b[i]=self.momentum_gamma*self.velocities_b[i]+lr*grad_biases[i]
+
+              self.weights[i]-=self.velocities_w[i]
+              self.biases[i]-=self.velocities_b[i]
+
+              if self.weight_decay>0:
+                self.weights[i]-=lr*self.weight_decay*self.weights[i]
+
+
+
+      elif self.optimizer=='nesterov':
+          for i in range(len(self.weights)):
+              prev_vw=self.velocities_w[i].copy()
+              prev_vb=self.velocities_b[i].copy()
+
+              self.velocities_w[i]=self.momentum_gamma*self.velocities_w[i]+lr*grad_weights[i] 
+              self.velocities_b[i]=self.momentum_gamma*self.velocities_b[i]+lr*grad_biases[i]
+
+              self.weights[i]-=-self.momentum_gamma*prev_vw+(1+self.momentum_gamma)*self.velocities_w[i]
+              self.biases[i]-=-self.momentum_gamma*prev_vb+(1+self.momentum_gamma)*self.velocities_b[i]
+
+              if self.weight_decay > 0:
+                self.weights[i] -= lr * self.weight_decay * self.weights[i]
+
+
+
+      elif self.optimizer=='rmsprop':
+          for i in range(len(self.weights)):
+              self.v_weights[i]=self.beta2*self.v_weights[i]+(1-self.beta2)*(grad_weights[i]**2)
+              self.v_biases[i]=self.beta2*self.v_biases[i]+(1-self.beta2)*(grad_biases[i]**2)
+
+              w_update=lr*grad_weights[i]/(np.sqrt(self.v_weights[i])+self.epsilon)
+              b_update=lr*grad_biases[i]/(np.sqrt(self.v_biases[i])+self.epsilon)
+
+              self.weights[i]-=w_update
+              self.biases[i]-=b_update
+
+              if self.weight_decay>0:
+                  self.weights[i]-=lr*self.weight_decay*self.weights[i]
+
+
+      elif self.optimizer=='adam' or self.optimizer=='nadam':
+          b1,b2,e=self.beta1,self.beta2,self.epsilon
+          t=self.timestep;self.timestep+=1
+          for i in range(len(self.weights)):
+              m,v=self.m_weights,self.v_weights
+              mb,vb=self.m_biases,self.v_biases
+              gw,gb=grad_weights,grad_biases
+    
+            #   gw[i]+=self.weight_decay*self.weights[i]
+
+              m[i]=b1*m[i]+(1-b1)*gw[i]
+              v[i]=b2*v[i]+(1-b2)*(gw[i]**2)
+
+              mb[i]=b1*mb[i]+(1-b1)*gb[i]
+              vb[i]=b2*vb[i]+(1-b2)*(gb[i]**2)
+
+              mhat=m[i]/(1-b1**t)
+              vhat=v[i]/(1-b2**t)
+
+              mbhat=mb[i]/(1-b1**t)
+              vbhat=vb[i]/(1-b2**t)
+
+              if self.optimizer=='nadam':
+                mhat=b1*mhat+(1-b1)*gw[i]/(1-b1**t)
+                mbhat=b1*mbhat+(1-b1)*gb[i]/(1-b1**t)
+
+              w_update=lr*mhat/(np.sqrt(vhat)+e)
+              b_update=lr*mbhat/(np.sqrt(vbhat)+e)
+
+              self.weights[i]-=w_update
+              self.biases[i]-=b_update
+
+              if self.weight_decay > 0:
+                self.weights[i] -= lr * self.weight_decay * self.weights[i]
+
 
