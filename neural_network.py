@@ -135,3 +135,44 @@ class NeuralNetwork:
     def mse_loss(self, y_pred: np.ndarray, y_true: np.ndarray) -> float:
         return np.mean((y_true - y_pred)**2)
 
+
+
+    
+    def forward_propagation(self, x: np.ndarray) -> List[np.ndarray]:
+        activations = [x]
+        
+        for i in range(len(self.weights)):
+            z = activations[-1] @ self.weights[i] + self.biases[i]
+            
+            if i == len(self.weights) - 1:
+                a = getattr(self, self.output_activation_name)(z)
+            else:
+                a = getattr(self, self.hidden_activation_name)(z)
+            
+            activations.append(a)
+        
+        return activations
+
+    # Backward propagation
+    def back_propagation(self, activations: List[np.ndarray], y_true: np.ndarray):
+        
+        grad_weights = [None] * len(self.weights)
+        grad_biases = [None] * len(self.biases)
+
+        # Compute delta at output layer
+        if self.loss_function_name == 'cross_entropy' and self.output_activation_name == 'softmax':
+            delta = activations[-1] - y_true
+        elif self.loss_function_name == 'mse':
+            delta = (activations[-1] - y_true) * (activations[-1] * (1 - activations[-1]))
+        
+        grad_weights[-1] = activations[-2].T @ delta
+        grad_biases[-1] = delta.sum(axis=0, keepdims=True)
+
+        # Propagate backwards through hidden layers
+        for i in reversed(range(len(grad_weights)-1)):
+            delta = (delta @ self.weights[i+1].T) * getattr(self, f"{self.hidden_activation_name}_derivative")(activations[i+1])
+            grad_weights[i] = activations[i].T @ delta
+            grad_biases[i] = delta.sum(axis=0, keepdims=True)
+
+        return grad_weights, grad_biases
+
