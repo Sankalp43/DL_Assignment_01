@@ -58,6 +58,19 @@ class NeuralNetwork:
         self.weights, self.biases = self.initialize_weights(layer_sizes=layer_sizes, method='xavier')
 
 
+        self.momentum_gamma = 0.9
+        self.beta1, self.beta2, self.epsilon = 0.9, 0.999, 1e-8
+        self.velocities_w = [np.zeros_like(w) for w in self.weights]
+        self.velocities_b = [np.zeros_like(b) for b in self.biases]
+        
+        # For Adam/Nadam/RMSProp
+        self.m_weights = [np.zeros_like(w) for w in self.weights]
+        self.v_weights = [np.zeros_like(w) for w in self.weights]
+        self.m_biases = [np.zeros_like(b) for b in self.biases]
+        self.v_biases = [np.zeros_like(b) for b in self.biases]
+        
+        # Timestep for Adam/Nadam
+        self.timestep = 1
 
 
     def initialize_weights(self, layer_sizes: List[int], method: str='random'):
