@@ -81,3 +81,57 @@ class NeuralNetwork:
             biases.append(np.zeros((1, layer_sizes[i+1])))
 
         return weights, biases
+    
+
+    # Activation functions and derivatives
+    def sigmoid(self, x: np.ndarray) -> np.ndarray:
+        return self.stable_sigmoid(x)
+        # return np.exp(x) / (1 + np.exp(x))
+        # return 1 / (1 + np.exp(-x))
+    
+    def stable_sigmoid(self , x):
+        positive_mask = x >= 0
+        negative_mask = ~positive_mask
+        result = np.empty_like(x)
+
+        result[positive_mask] = 1 / (1 + np.exp(-x[positive_mask]))
+        exp_x = np.exp(x[negative_mask])
+        result[negative_mask] = exp_x = exp_x / (1 + exp_x)
+        
+        return result
+
+
+    def sigmoid_derivative(self, x: np.ndarray) -> np.ndarray:
+        return x * (1 - x)
+
+    def relu(self, x: np.ndarray) -> np.ndarray:
+        return np.maximum(0, x)
+
+    def relu_derivative(self, x: np.ndarray) -> np.ndarray:
+        return (x > 0).astype(float)
+
+    def tanh(self, x: np.ndarray) -> np.ndarray:
+        return np.tanh(x)
+
+    def tanh_derivative(self, x: np.ndarray) -> np.ndarray:
+        return 1 - np.tanh(x)**2
+
+    def softmax(self, x: np.ndarray) -> np.ndarray:
+        exp_x = np.exp(x - np.max(x, axis=1, keepdims=True))
+        return exp_x / exp_x.sum(axis=1, keepdims=True)
+    
+    # def softmax_derivative(self, x: np.ndarray) -> np.ndarray:
+        # return x * (1 - x)
+
+    # def softmax_derivative(self, x: np.ndarray) -> np.ndarray:
+        # s = x.reshape(-1, 1)
+        # return np.diagflat(s) - np.dot(s, s.T)
+
+    
+    # Loss functions
+    def cross_entropy_loss(self, y_pred: np.ndarray, y_true: np.ndarray) -> float:
+        return -np.mean(np.sum(y_true * np.log(y_pred + 1e-8), axis=1))
+
+    def mse_loss(self, y_pred: np.ndarray, y_true: np.ndarray) -> float:
+        return np.mean((y_true - y_pred)**2)
+
