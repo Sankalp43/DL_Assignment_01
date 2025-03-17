@@ -1,7 +1,7 @@
 # DA6400 Assignment 01
 
 ## Report Link (WANDB)
-[View Report](abc.xyz)
+[View Report](https://wandb.ai/da24s021-indian-institute-of-technology-madras/DA6401_assignment1/reports/DA6401-Assignment-1--VmlldzoxMTcxMzEwNw)
 
 ## Main Files for Assignment Grading
 The assignment consists of three main files:
@@ -90,4 +90,5 @@ python train.py --wandb_entity myname --wandb_project myprojectname
 
 ## Submitted By:
 **Sankalp Shrivastava**
+**DA24S021**
 
