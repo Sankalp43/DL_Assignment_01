@@ -1,7 +1,7 @@
 # DA6400 Assignment 01
 
 ## Report Link (WANDB)
-[View Report](https://wandb.ai/da24s021-indian-institute-of-technology-madras/DA6401_assignment1/reports/DA6401-Assignment-1--VmlldzoxMTcxMzEwNw)
+[View Report](https://wandb.ai/da24s021-indian-institute-of-technology-madras/DA6401_assignment1/reports/DA6401-Assignment-1---VmlldzoxMTgzOTA1OA?accessToken=6zt15mnsks7twgmqcfn83hgfkypuiphuh069f2ol759cjvf6wzcjex3nqsmzhu89)
 
 ## Github Link
 [Github](https://github.com/Sankalp43/DL_Assignment_01)
