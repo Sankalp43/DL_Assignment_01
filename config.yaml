@@ -1,4 +1,4 @@
-program: train_nn.py
+program: train.py
 name: 'DA6401_Assignment1'
 method: random
 metric:

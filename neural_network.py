@@ -17,7 +17,20 @@ class NeuralNetwork:
     ):
         """
         Initialize the neural network with given parameters.
+
+        Parameters:
+        - input_size (int): Number of input features.
+        - hidden_layers (List[int]): List containing the number of neurons in each hidden layer.
+        - output_size (int): Number of output neurons.
+        - hidden_activation (str): Activation function for hidden layers ('sigmoid', 'relu', 'tanh').
+        - output_activation (str): Activation function for output layer ('softmax', 'sigmoid').
+        - loss_function (str): Loss function ('cross_entropy', 'mse').
+        - learning_rate (float): Learning rate for weight updates.
+        - optimizer (str): Optimization algorithm ('sgd', 'momentum', 'nesterov', 'rmsprop', 'adam', 'nadam').
+        - weight_initialization (str): Weight initialization method ('random', 'xavier').
+        - weight_decay (float): Regularization term to prevent overfitting.
         """
+         
         self.input_size = input_size
         self.hidden_layers = hidden_layers
         self.output_size = output_size
@@ -28,6 +41,8 @@ class NeuralNetwork:
         self.loss_function_name = loss_function
         self.weight_initialization = weight_initialization.lower()
         self.weight_decay = weight_decay
+
+
         # Validate activation and loss functions
         supported_activations = ['sigmoid', 'relu', 'tanh']
         supported_losses = ['cross_entropy', 'mse']
@@ -57,7 +72,10 @@ class NeuralNetwork:
         layer_sizes = [input_size] + hidden_layers + [output_size]
         self.weights, self.biases = self.initialize_weights(layer_sizes=layer_sizes, method='xavier')
 
+        
 
+
+        # Optimizer parameters initialization
         self.momentum_gamma = 0.9
         self.beta1, self.beta2, self.epsilon = 0.9, 0.999, 1e-8
         self.velocities_w = [np.zeros_like(w) for w in self.weights]
@@ -73,7 +91,22 @@ class NeuralNetwork:
         self.timestep = 1
 
 
+###################################################################################################################
+    # Weight initialization
+
+
     def initialize_weights(self, layer_sizes: List[int], method: str='random'):
+        """
+        Initializes weights and biases using the specified method.
+        
+        Parameters:
+        - layer_sizes (List[int]): List containing the number of neurons in each layer.
+        - method (str): Weight initialization method ('random' or 'xavier').
+        
+        Returns:
+        - weights (List[np.ndarray]): List of weight matrices for each layer.
+        - biases (List[np.ndarray]): List of bias vectors for each layer.
+        """
         weights, biases = [], []
         
         for i in range(len(layer_sizes) - 1):
@@ -94,15 +127,37 @@ class NeuralNetwork:
             biases.append(np.zeros((1, layer_sizes[i+1])))
 
         return weights, biases
-    
 
-    # Activation functions and derivatives
+###################################################################################################################
+
+    # Activation functions and derivatives #
+
     def sigmoid(self, x: np.ndarray) -> np.ndarray:
+        """
+        Computes the sigmoid activation function.
+        
+        Parameters:
+        - x (np.ndarray): Input array.
+        
+        Returns:
+        - np.ndarray: Output after applying the sigmoid function.
+        """
+
         return self.stable_sigmoid(x)
         # return np.exp(x) / (1 + np.exp(x))
         # return 1 / (1 + np.exp(-x))
     
     def stable_sigmoid(self , x):
+        """
+        Numerically stable sigmoid function.
+        
+        Parameters:
+        - x (np.ndarray): Input array.
+        
+        Returns:
+        - np.ndarray: Output after applying the sigmoid function.
+        """
+
         positive_mask = x >= 0
         negative_mask = ~positive_mask
         result = np.empty_like(x)
@@ -115,21 +170,75 @@ class NeuralNetwork:
 
 
     def sigmoid_derivative(self, x: np.ndarray) -> np.ndarray:
+        """
+        Computes the derivative of the sigmoid function.
+        
+        Parameters:
+        - x (np.ndarray): Input array.
+        
+        Returns:
+        - np.ndarray: Output after applying the derivative of sigmoid.
+        """
         return x * (1 - x)
 
     def relu(self, x: np.ndarray) -> np.ndarray:
+        """
+        Computes the ReLU activation function.
+        
+        Parameters:
+        - x (np.ndarray): Input array.
+        
+        Returns:
+        - np.ndarray: Output after applying the ReLU function.
+        """
         return np.maximum(0, x)
 
     def relu_derivative(self, x: np.ndarray) -> np.ndarray:
+        """
+        Computes the derivative of the ReLU function.
+        
+        Parameters:
+        - x (np.ndarray): Input array.
+        
+        Returns:
+        - np.ndarray: Output after applying the derivative of ReLU.
+        """
         return (x > 0).astype(float)
 
     def tanh(self, x: np.ndarray) -> np.ndarray:
+        """
+        Computes the tanh activation function.
+        
+        Parameters:
+        - x (np.ndarray): Input array.
+        
+        Returns:
+        - np.ndarray: Output after applying the tanh function.
+        """
         return np.tanh(x)
 
     def tanh_derivative(self, x: np.ndarray) -> np.ndarray:
+        """
+        Computes the derivative of the tanh function.
+        
+        Parameters:
+        - x (np.ndarray): Input array.
+        
+        Returns:
+        - np.ndarray: Output after applying the derivative of tanh.
+        """
         return 1 - np.tanh(x)**2
 
     def softmax(self, x: np.ndarray) -> np.ndarray:
+        """
+        Computes the stable softmax activation function to prevent overflow.
+        
+        Parameters:
+        - x (np.ndarray): Input array.
+        
+        Returns:
+        - np.ndarray: Output after applying the softmax function.
+        """
         exp_x = np.exp(x - np.max(x, axis=1, keepdims=True))
         return exp_x / exp_x.sum(axis=1, keepdims=True)
     
@@ -140,18 +249,52 @@ class NeuralNetwork:
         # s = x.reshape(-1, 1)
         # return np.diagflat(s) - np.dot(s, s.T)
 
+
+
+###################################################################################################################
     
     # Loss functions
+
     def cross_entropy_loss(self, y_pred: np.ndarray, y_true: np.ndarray) -> float:
+        """
+        Computes the cross-entropy loss between predicted and true labels.
+        
+        Parameters:
+        - y_pred (np.ndarray): Predicted probabilities.
+        - y_true (np.ndarray): True labels (one-hot encoded).
+        
+        Returns:
+        - float: Computed cross-entropy loss.
+        """
         return -np.mean(np.sum(y_true * np.log(y_pred + 1e-8), axis=1))
 
     def mse_loss(self, y_pred: np.ndarray, y_true: np.ndarray) -> float:
+        """
+        Compute the Mean Squared Error (MSE) loss.
+        
+        Parameters:
+        y_pred (np.ndarray): Predicted values.
+        y_true (np.ndarray): True values.
+        
+        Returns:
+        float: Computed MSE loss.
+        """
         return np.mean((y_true - y_pred)**2)
-
-
-
     
+###################################################################################################################
+
+    # Forward propagation
+
     def forward_propagation(self, x: np.ndarray) -> List[np.ndarray]:
+        """
+        Perform forward propagation through the network.
+        
+        Parameters:
+        x (np.ndarray): Input data.
+        
+        Returns:
+        List[np.ndarray]: List of activations for each layer, including input.
+        """
         activations = [x]
         
         for i in range(len(self.weights)):
@@ -165,9 +308,23 @@ class NeuralNetwork:
             activations.append(a)
         
         return activations
+    
+
+###################################################################################################################    
 
     # Backward propagation
+
     def back_propagation(self, activations: List[np.ndarray], y_true: np.ndarray):
+        """
+        Perform backpropagation to compute gradients.
+        
+        Parameters:
+        activations (List[np.ndarray]): List of activations from forward propagation.
+        y_true (np.ndarray): True output values.
+        
+        Returns:
+        Tuple[List[np.ndarray], List[np.ndarray]]: Gradients for weights and biases.
+        """
         
         grad_weights = [None] * len(self.weights)
         grad_biases = [None] * len(self.biases)
@@ -190,14 +347,16 @@ class NeuralNetwork:
         return grad_weights, grad_biases
     
 
+###################################################################################################################
 
+    # Optimizers
 
-    # Parameter update using SGD optimizer
-    def update_parameters(self,grad_weights,grad_biases):
-      lr=self.learning_rate
-      
-      if self.optimizer=='sgd':
-          for i in range(len(self.weights)):
+    def sgd(self,grad_weights,grad_biases):
+        """
+        Performs Stochastic Gradient Descent (SGD) optimization.
+        """
+        lr=self.learning_rate
+        for i in range(len(self.weights)):
             #   self.weights[i]-=lr*grad_weights[i]
             #   self.biases[i]-=lr*grad_biases[i]
 
@@ -205,10 +364,12 @@ class NeuralNetwork:
               self.weights[i] -= lr * (grad_weights[i] + self.weight_decay * self.weights[i])
               self.biases[i] -= lr * grad_biases[i]
 
-      elif self.optimizer=='momentum':
-
-
-          for i in range(len(self.weights)):
+    def momentum(self,grad_weights,grad_biases):
+        """
+        Performs Momentum-based optimization.
+        """
+        lr=self.learning_rate
+        for i in range(len(self.weights)):
               self.velocities_w[i]=self.momentum_gamma*self.velocities_w[i]+lr*grad_weights[i]
               self.velocities_b[i]=self.momentum_gamma*self.velocities_b[i]+lr*grad_biases[i]
 
@@ -218,26 +379,12 @@ class NeuralNetwork:
               if self.weight_decay>0:
                 self.weights[i]-=lr*self.weight_decay*self.weights[i]
 
-
-
-      elif self.optimizer=='nesterov':
-          for i in range(len(self.weights)):
-              prev_vw=self.velocities_w[i].copy()
-              prev_vb=self.velocities_b[i].copy()
-
-              self.velocities_w[i]=self.momentum_gamma*self.velocities_w[i]+lr*grad_weights[i] 
-              self.velocities_b[i]=self.momentum_gamma*self.velocities_b[i]+lr*grad_biases[i]
-
-              self.weights[i]-=-self.momentum_gamma*prev_vw+(1+self.momentum_gamma)*self.velocities_w[i]
-              self.biases[i]-=-self.momentum_gamma*prev_vb+(1+self.momentum_gamma)*self.velocities_b[i]
-
-              if self.weight_decay > 0:
-                self.weights[i] -= lr * self.weight_decay * self.weights[i]
-
-
-
-      elif self.optimizer=='rmsprop':
-          for i in range(len(self.weights)):
+    def nesterov(self,grad_weights,grad_biases):
+        """
+        Performs nesterov-based optimization.
+        """
+        lr=self.learning_rate
+        for i in range(len(self.weights)):
               self.v_weights[i]=self.beta2*self.v_weights[i]+(1-self.beta2)*(grad_weights[i]**2)
               self.v_biases[i]=self.beta2*self.v_biases[i]+(1-self.beta2)*(grad_biases[i]**2)
 
@@ -250,56 +397,162 @@ class NeuralNetwork:
               if self.weight_decay>0:
                   self.weights[i]-=lr*self.weight_decay*self.weights[i]
 
+    def rmsprop(self,grad_weights,grad_biases):
+        """
+        Performs RMSProp optimization.
+        """
+        lr=self.learning_rate
+        for i in range(len(self.weights)):
+              self.v_weights[i]=self.beta2*self.v_weights[i]+(1-self.beta2)*(grad_weights[i]**2)
+              self.v_biases[i]=self.beta2*self.v_biases[i]+(1-self.beta2)*(grad_biases[i]**2)
 
-      elif self.optimizer=='adam' or self.optimizer=='nadam':
-          b1,b2,e=self.beta1,self.beta2,self.epsilon
-          t=self.timestep;self.timestep+=1
-          for i in range(len(self.weights)):
-              m,v=self.m_weights,self.v_weights
-              mb,vb=self.m_biases,self.v_biases
-              gw,gb=grad_weights,grad_biases
-    
-            #   gw[i]+=self.weight_decay*self.weights[i]
-
-              m[i]=b1*m[i]+(1-b1)*gw[i]
-              v[i]=b2*v[i]+(1-b2)*(gw[i]**2)
-
-              mb[i]=b1*mb[i]+(1-b1)*gb[i]
-              vb[i]=b2*vb[i]+(1-b2)*(gb[i]**2)
-
-              mhat=m[i]/(1-b1**t)
-              vhat=v[i]/(1-b2**t)
-
-              mbhat=mb[i]/(1-b1**t)
-              vbhat=vb[i]/(1-b2**t)
-
-              if self.optimizer=='nadam':
-                mhat=b1*mhat+(1-b1)*gw[i]/(1-b1**t)
-                mbhat=b1*mbhat+(1-b1)*gb[i]/(1-b1**t)
-
-              w_update=lr*mhat/(np.sqrt(vhat)+e)
-              b_update=lr*mbhat/(np.sqrt(vbhat)+e)
+              w_update=lr*grad_weights[i]/(np.sqrt(self.v_weights[i])+self.epsilon)
+              b_update=lr*grad_biases[i]/(np.sqrt(self.v_biases[i])+self.epsilon)
 
               self.weights[i]-=w_update
               self.biases[i]-=b_update
 
-              if self.weight_decay > 0:
+              if self.weight_decay>0:
+                  self.weights[i]-=lr*self.weight_decay*self.weights[i]
+
+    def adam(self,grad_weights,grad_biases):
+        """
+        Performs ADAM optimization.
+        """
+        lr = self.learning_rate
+        
+        b1,b2,e=self.beta1,self.beta2,self.epsilon
+        t=self.timestep;self.timestep+=1
+        for i in range(len(self.weights)):
+            m,v=self.m_weights,self.v_weights
+            mb,vb=self.m_biases,self.v_biases
+            gw,gb=grad_weights,grad_biases
+
+            # gw[i]+=self.weight_decay*self.weights[i]
+
+            m[i]=b1*m[i]+(1-b1)*gw[i]
+            v[i]=b2*v[i]+(1-b2)*(gw[i]**2)
+
+            mb[i]=b1*mb[i]+(1-b1)*gb[i]
+            vb[i]=b2*vb[i]+(1-b2)*(gb[i]**2)
+
+            mhat=m[i]/(1-b1**t)
+            vhat=v[i]/(1-b2**t)
+
+            mbhat=mb[i]/(1-b1**t)
+            vbhat=vb[i]/(1-b2**t)
+
+            w_update=lr*mhat/(np.sqrt(vhat)+e)
+            b_update=lr*mbhat/(np.sqrt(vbhat)+e)
+
+            self.weights[i]-=w_update
+            self.biases[i]-=b_update
+
+            if self.weight_decay > 0:
+                self.weights[i] -= lr * self.weight_decay * self.weights[i]
+
+    def nadam(self,grad_weights,grad_biases):
+        """
+        Performs Nadam optimization.
+        """
+        lr = self.learning_rate
+        b1,b2,e=self.beta1,self.beta2,self.epsilon
+        t=self.timestep;self.timestep+=1
+        for i in range(len(self.weights)):
+            m,v=self.m_weights,self.v_weights
+            mb,vb=self.m_biases,self.v_biases
+            gw,gb=grad_weights,grad_biases
+
+            # gw[i]+=self.weight_decay*self.weights[i]
+
+            m[i]=b1*m[i]+(1-b1)*gw[i]
+            v[i]=b2*v[i]+(1-b2)*(gw[i]**2)
+
+            mb[i]=b1*mb[i]+(1-b1)*gb[i]
+            vb[i]=b2*vb[i]+(1-b2)*(gb[i]**2)
+
+            mhat=m[i]/(1-b1**t)
+            vhat=v[i]/(1-b2**t)
+
+            mbhat=mb[i]/(1-b1**t)
+            vbhat=vb[i]/(1-b2**t)
+
+            mhat=b1*mhat+(1-b1)*gw[i]/(1-b1**t)
+            mbhat=b1*mbhat+(1-b1)*gb[i]/(1-b1**t)
+
+            w_update=lr*mhat/(np.sqrt(vhat)+e)
+            b_update=lr*mbhat/(np.sqrt(vbhat)+e)
+
+            self.weights[i]-=w_update
+            self.biases[i]-=b_update
+
+            if self.weight_decay > 0:
                 self.weights[i] -= lr * self.weight_decay * self.weights[i]
 
 
 
+
+
+###################################################################################################################
+
+    # Parameter update using optimizers
+
+    def update_parameters(self,grad_weights,grad_biases):
+      """
+        Update network parameters using the selected optimizer.
+        
+        Parameters:
+        grad_weights (List[np.ndarray]): Gradients of weights.
+        grad_biases (List[np.ndarray]): Gradients of biases.
+        """
+      lr=self.learning_rate
+      
+      if self.optimizer=='sgd':
+          self.sgd(grad_weights,grad_biases)
+       
+
+      elif self.optimizer=='momentum':
+          self.momentum(grad_weights,grad_biases)
+
+
+      elif self.optimizer=='nesterov':
+          self.nesterov(grad_weights,grad_biases)
+       
+
+      elif self.optimizer=='rmsprop':
+          self.rmsprop(grad_weights,grad_biases)
+       
+
+      elif self.optimizer=='adam':
+            self.adam(grad_weights,grad_biases)
+
+      elif self.optimizer=='nadam':
+            self.nadam(grad_weights,grad_biases)    
+        
+###################################################################################################################
+
+    # Accuracy calculation
+
     def calculate_accuracy(self, y_pred: np.ndarray, y_true: np.ndarray) -> float:
         """
-        Calculate accuracy given predictions and true labels.
+        Calculate classification accuracy.
+        
+        Parameters:
+        y_pred (np.ndarray): Predicted output values.
+        y_true (np.ndarray): True labels.
+        
+        Returns:
+        float: Accuracy percentage.
         """
         pred_labels = np.argmax(y_pred, axis=1)
         true_labels = np.argmax(y_true, axis=1)
         accuracy = np.mean(pred_labels == true_labels) * 100
         return accuracy
 
+###################################################################################################################
 
+    # Training method
         
-    # Training method with early stopping placeholder (for future implementation)
     def train(
             self,
             x_train: np.ndarray,
@@ -309,6 +562,19 @@ class NeuralNetwork:
             x_val: np.ndarray = None,
             y_val: np.ndarray = None,
             wandb=None):
+        
+        """
+        Train the neural network.
+        
+        Parameters:
+        x_train (np.ndarray): Training input data.
+        y_train (np.ndarray): Training labels.
+        epochs (int): Number of epochs to train.
+        batch_size (int, optional): Size of training batches. Defaults to full dataset.
+        x_val (np.ndarray, optional): Validation input data.
+        y_val (np.ndarray, optional): Validation labels.
+        wandb: Weights and Biases logging.
+        """
         
         n_samples = x_train.shape[0]
         
@@ -348,14 +614,27 @@ class NeuralNetwork:
                 val_acc = self.calculate_accuracy(val_preds, y_val)
 
                 print(f"Validation Loss: {val_loss:.4f}, Validation Accuracy: {val_acc:.2f}%")
-                wandb.log({"Train_Loss": epoch_loss, "Train_Accuracy": accuracy, "Val Loss": val_loss, "Val Accuracy": val_acc})
+                if wandb:
+                    wandb.log({"Train_Loss": epoch_loss, "Train_Accuracy": accuracy, "Val Loss": val_loss, "Val Accuracy": val_acc})
 
             # print(f"Epoch {epoch+1}/{epochs}, Loss:{epoch_loss:.4f}")
 
+
+###################################################################################################################
+
     # Prediction method
+    
     def predict(self,x_test:np.ndarray)->np.ndarray:
+         """
+        Make predictions on test data.
+        
+        Parameters:
+        x_test (np.ndarray): Test input data.
+        
+        Returns:
+        np.ndarray: Predicted class labels.
+        """
         
          preds=self.forward_propagation(x_test)[-1]
          return preds.argmax(axis=1)
-
 
