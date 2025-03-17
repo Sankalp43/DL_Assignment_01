@@ -3,6 +3,9 @@
 ## Report Link (WANDB)
 [View Report](https://wandb.ai/da24s021-indian-institute-of-technology-madras/DA6401_assignment1/reports/DA6401-Assignment-1--VmlldzoxMTcxMzEwNw)
 
+## Github Link
+[Github](https://github.com/Sankalp43/DL_Assignment_01)
+
 ## Main Files for Assignment Grading
 The assignment consists of three main files:
 
